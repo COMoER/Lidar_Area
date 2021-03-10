@@ -118,7 +118,7 @@ find_package(PCL REQUIRED)
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
-include_directories( "/usr/include/eigen3" )
+include_directories(${EIGEN_LIB_DIRS})
 
 
 ## Specify additional locations of header files
@@ -142,10 +142,12 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/ros_test_node.cpp)
-add_library(${PROJECT_NAME}
+add_library(${PROJECT_NAME}_area
         src/lidar_area.h
         src/lidar_area.cpp
         )
+
+target_link_libraries(${PROJECT_NAME}_area    ${catkin_LIBRARIES} 	${PCL_LIBRARIES} ${EIGEN_LIB})
 set(SRC ${SRC} src/main.cpp)
 add_executable(${PROJECT_NAME}_node ${SRC})
 
@@ -165,7 +167,7 @@ add_executable(${PROJECT_NAME}_node ${SRC})
 #   ${catkin_LIBRARIES}
 # )
  target_link_libraries(${PROJECT_NAME}_node
-   ${catkin_LIBRARIES} 	${PCL_LIBRARIES}
+   ${catkin_LIBRARIES} 	${PCL_LIBRARIES} ${EIGEN_LIB_DIRS} ${PROJECT_NAME}_area
  )
 #############
 ## Install ##

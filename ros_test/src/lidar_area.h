@@ -19,8 +19,9 @@
 using namespace std;
 using namespace Eigen;
 using namespace sensor_msgs;
+using namespace pcl;
 
-typedef vector<Vector3d> PointCloud;
+typedef pcl::PointCloud<pcl::PointXYZ> LidarPointCloud;
 
 class lidar_area{
 private:
@@ -31,14 +32,20 @@ private:
     const Vector2f y_threshold;
     const Vector2f h_threshold;
 
+    float vol_size;
+
+    LidarPointCloud** grids;
+
 
     ros::Publisher* _pub;
     ros::Subscriber* _sub;
     ros::NodeHandle* _lidar_n;
 
+    int init_num;
+
     mutex lock;
 
-    int getAreaOrder(Vector2i &,const Vector3f &);
+    int getAreaOrder(int &i,int &j,const float x,const float y,const float z);
     void callback(const PointCloud2::ConstPtr &);
 public:
     lidar_area(float vol_size,float x_low,float x_high,float y_low,float y_high,float h_high);
