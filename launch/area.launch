@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+
+	<!-- declare arguments with default values -->
+
+	<node pkg="lidar_area" type="camera_position" name = "camera_position" output="screen">
+		<param name="camera_topic" value="/camera0/image_raw"/>
+		<param name="Intrinsic" value="$(find lidar_area)/data/parameters/intrinsic.txt"/>
+	</node>
+
+
+	<node pkg="lidar_area" type="lidar_area_node" name = "lidar_area_node" output="screen">
+		<param name="Extrinsic" value="$(find lidar_area)/data/parameters/extrinsic.txt"/>
+		<param name="lidar_topic" value="/points_raw"/>
+	</node>
+</launch>
