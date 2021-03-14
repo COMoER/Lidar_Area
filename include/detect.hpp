@@ -7,7 +7,7 @@
 
 #include <ros/ros.h>
 
-#include <std_msgs/Float64MultiArray.h>
+#include <std_msgs/Float32MultiArray.h>
 #include <sensor_msgs/Image.h>
 
 //opencv and apriltag
@@ -50,6 +50,8 @@ private:
     apriltag_family_t *tf;
 
     vector<float> msg;
+
+    bool spin_flag;
 
 
 

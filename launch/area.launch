@@ -2,15 +2,18 @@
 <launch>
 
 	<!-- declare arguments with default values -->
-
-	<node pkg="lidar_area" type="camera_position" name = "camera_position" output="screen">
+<!--
+	<node pkg="lidar_ros_area" type="camera_position" name = "camera_position" output="screen">
 		<param name="camera_topic" value="/camera0/image_raw"/>
-		<param name="Intrinsic" value="$(find lidar_area)/data/parameters/intrinsic.txt"/>
+		<param name="Intrinsic" value="$(find lidar_ros_area)/data/parameters/intrinsic.txt"/>
 	</node>
 
-
-	<node pkg="lidar_area" type="lidar_area_node" name = "lidar_area_node" output="screen">
-		<param name="Extrinsic" value="$(find lidar_area)/data/parameters/extrinsic.txt"/>
+!-->
+	<node pkg="lidar_ros_area" type="lidar_ros_area_node" name = "lidar_ros_area_node" output="screen">
+		<param name="Extrinsic" value="$(find lidar_ros_area)/data/parameters/extrinsic.txt"/>
 		<param name="lidar_topic" value="/points_raw"/>
+		<param name="debug" type="bool" value="true"/>
+		<param name="pose_topic" value="/camera_pose"/>
+
 	</node>
 </launch>

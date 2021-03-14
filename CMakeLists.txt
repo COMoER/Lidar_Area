@@ -1,20 +1,28 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(lidar_area)
+project(lidar_ros_area)
 
 
 find_package(catkin REQUIRED COMPONENTS
-  roscpp rosbag pcl_ros cv_bridge sensor_msgs std_msgs
+  roscpp rospy rosbag pcl_ros cv_bridge sensor_msgs std_msgs message_generation
 )
 
 
+add_message_files(
+  FILES
+  Grid.msg
+)
 
-
+generate_messages(
+    DEPENDENCIES
+    std_msgs  
+)
 ## To declare and build dynamic reconfigure parameters within this
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES ros_test
 #  CATKIN_DEPENDS roscpp
 #  DEPENDS system_lib
+CATKIN_DEPENDS message_runtime
 )
 
 ###########

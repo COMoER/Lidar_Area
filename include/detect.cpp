@@ -10,7 +10,7 @@ lcca::lcca(NodeHandle &n, const string &camera_topic)
     camera_sub = new Subscriber;
     pub = new Publisher;
     *camera_sub = _lcca_n->subscribe<sensor_msgs::Image>(camera_topic,10,&lcca::callback_camera,this);
-    *pub = _lcca_n->advertise<std_msgs::Float64MultiArray>("camera_position",1);
+    *pub = _lcca_n->advertise<std_msgs::Float32MultiArray>("camera_position",10);
 
     cv::namedWindow("camera",cv::WINDOW_NORMAL);
     K = cv::Mat::zeros(3,3,CV_64FC1);
@@ -48,24 +48,28 @@ lcca::lcca(NodeHandle &n, const string &camera_topic)
     td = apriltag_detector_create();
     apriltag_detector_add_family(td, tf);
 
+    spin_flag = false;
+
 }
 
 
 void lcca::callback_camera(const sensor_msgs::Image::ConstPtr &data) {
+    if(spin_flag)
+    {
+        pub->publish(msg);
+        return;
+    }
     cv_bridge::CvImageConstPtr imgptr = cv_bridge::toCvCopy(data,data->encoding);
     cv::Mat img_raw = imgptr->image;
     cv::imshow("camera",img_raw);
 
     auto key = cv::waitKey(80);
 
-    msg.push_back(0.);
     if (key == (0xFF & 'q'))
     {
         cv::destroyWindow("camera");
         ROS_INFO("Camera_position node will send position matrix continuously until you terminate whole program!");
-        while(ros::ok())
-            pub->publish(msg);
-        Exit();
+        spin_flag = true;
     }
     if (key == (0xFF & 'o'))
     {
@@ -91,9 +95,10 @@ void lcca::callback_camera(const sensor_msgs::Image::ConstPtr &data) {
         zarray_get(detections, 0, &det);
         for(int i = 0;i<4;++i){
             cv::circle(img,cv::Point2d(det->p[i][0],det->p[i][1]),1,cv::Scalar(0,255,255));
+            cv::imshow("camera",img);
+            cv::waitKey(0);
         }
-        cv::imshow("camera",img);
-        cv::waitKey(0);
+
 
         info->det = det;
 
@@ -104,8 +109,11 @@ void lcca::callback_camera(const sensor_msgs::Image::ConstPtr &data) {
         auto t = pose.t->data;
 
         msg.clear();
-        for(int i = 0;i<9;++i) msg.push_back(R[i]);
-        for(int i = 0;i<3;++i) msg.push_back(t[i]);
+        for(int i = 0;i<9;++i)
+        {
+            msg.push_back(R[i]);
+            if((i+1)%3) msg.push_back(t[i/3]);
+        }
 
 
         ROS_INFO("Location error is %.03f",err);
