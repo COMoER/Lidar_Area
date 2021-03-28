@@ -18,8 +18,18 @@ int main(int argc, char **argv)
         lt = "/livox/lidar";
         ROS_INFO("No receive! Lidar_topic sets to default %s",lt.c_str());
     }
-    else ROS_INFO("Lidar_topic sets to %s",lt.c_str());
-    lidar_area la(n,0.05,10.7,28.0,0.0,14.0,0,3.0);
+    float xmin,xmax,ymin,ymax,zmin,zmax,vol_size;
+    n.getParam("xmin",xmin);
+    n.getParam("xmax",xmax);
+    n.getParam("ymin",ymin);
+    n.getParam("ymax",ymax);
+    n.getParam("zmin",zmin);
+    n.getParam("zmax",zmax);
+    n.getParam("vol_size",vol_size);
+
+    ROS_INFO("INIT");
+
+    lidar_area la(n,vol_size,xmin,xmax,ymin,ymax,zmin,zmax);
     la.start(lt);
     ros::Rate r(50);
     while(ros::ok())

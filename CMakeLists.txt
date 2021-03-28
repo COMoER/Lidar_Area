@@ -34,7 +34,7 @@ find_package(PCL REQUIRED)
 
 find_package(Eigen3 REQUIRED)
 
-find_package(apriltag REQUIRED)
+#find_package(apriltag REQUIRED)
 
 find_package(OpenCV REQUIRED)
 
@@ -46,7 +46,7 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
         ${EIGEN3_INCLUDE_DIRS}
         ${PCL_INCLUDE_DIRS}
-        ${APRILTAG_INCLUDE_DIRS}
+       # ${APRILTAG_INCLUDE_DIRS}
         ${OpenCV_INCLUDE_DIRS}
         ${PROJECT_SOURCE_DIR}/include/
 )
@@ -57,15 +57,15 @@ add_library(${PROJECT_NAME}_area
         include/lidar_area.cpp
         include/common.h
         )
-add_library(${PROJECT_NAME}_detect
-        include/common.h
-        ${PROJECT_SOURCE_DIR}/include/detect.cpp
-        ${PROJECT_SOURCE_DIR}/include/detect.hpp
-        )
+#add_library(${PROJECT_NAME}_detect
+#        include/common.h
+#        ${PROJECT_SOURCE_DIR}/include/detect.cpp
+#        ${PROJECT_SOURCE_DIR}/include/detect.hpp
+#        )
 
 target_link_libraries(${PROJECT_NAME}_area    ${catkin_LIBRARIES} 	${PCL_LIBRARIES} ${EIGEN3_LIB})
 
-target_link_libraries(${PROJECT_NAME}_detect    ${catkin_LIBRARIES} 	${PCL_LIBRARIES} ${APRILTAG_LIBS} ${OpenCV_LIBS} ${EIGEN3_LIB})
+#target_link_libraries(${PROJECT_NAME}_detect    ${catkin_LIBRARIES} 	${PCL_LIBRARIES} ${APRILTAG_LIBS} ${OpenCV_LIBS} ${EIGEN3_LIB})
 
 add_executable(${PROJECT_NAME}_node src/main.cpp)
 
@@ -75,7 +75,7 @@ add_executable(${PROJECT_NAME}_node src/main.cpp)
    ${catkin_LIBRARIES} 	${PCL_LIBRARIES} ${PROJECT_NAME}_area ${EIGEN3_LIB}
  )
 
-add_executable(camera_position src/camera_position.cpp)
+#add_executable(camera_position src/camera_position.cpp)
 
-target_link_libraries(camera_position ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${APRILTAG_LIBS} ${OpenCV_LIBS} ${PROJECT_NAME}_detect ${EIGEN3_LIB})
+#target_link_libraries(camera_position ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${APRILTAG_LIBS} ${OpenCV_LIBS} ${PROJECT_NAME}_detect ${EIGEN3_LIB})
 

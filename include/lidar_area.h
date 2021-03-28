@@ -23,6 +23,8 @@
 
 #include <lidar_ros_area/Grid.h>
 
+#include <thread>
+
 
 using namespace std;
 using namespace Eigen;
@@ -59,7 +61,14 @@ private:
 
     LidarPointCloud** grids;
 
-    pcl::PassThrough<PointXYZ> pass;
+    pcl::PassThrough<PointXYZ> pass_x;
+    pcl::PassThrough<PointXYZ> pass_y;
+    pcl::PassThrough<PointXYZ> pass_z;
+
+    ros::Publisher _cloud_pub;
+
+    LidarPointCloud grids_points;
+    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> cloud_color;
 
     MatrixXf l_T;
     MatrixXf c_T;
@@ -89,7 +98,7 @@ private:
     void pose_callback(const std_msgs::Float32MultiArrayConstPtr &);
     int get_pose();
     LidarPointCloud* index(const int i,const int j,const int k){
-        return grids[i*rows*channels+j*channels+k];
+        return grids[i*cols*channels+j*channels+k];
     }
 public:
     lidar_area(ros::NodeHandle &n,float vol_size,float x_low,float x_high,float y_low,float y_high,float z_low,float z_high);

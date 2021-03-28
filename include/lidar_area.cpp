@@ -8,6 +8,7 @@ using namespace pcl;
 
 lidar_area::lidar_area(ros::NodeHandle &n,float vs,float x_low,float x_high,float y_low,float y_high,float z_low,float z_high):
 x_threshold(x_low,x_high),y_threshold(y_low,y_high),z_threshold(z_low,z_high),vol_size(vs),T(4,4),c_T(4,4),l_T(4,4),DEBUG(false)
+,cloud_color(255,0,0)
 {
     _lidar_n = &n;
     _sub = nullptr;
@@ -15,8 +16,8 @@ x_threshold(x_low,x_high),y_threshold(y_low,y_high),z_threshold(z_low,z_high),vo
 
     srand(unsigned(time(NULL)));
 
-    cols = ceil((x_high-x_low)/vol_size);
-    rows = ceil((y_high-y_low)/vol_size);
+    rows = ceil((x_high-x_low)/vol_size);
+    cols = ceil((y_high-y_low)/vol_size);
     channels = ceil((z_high-z_low)/vol_size);
 
     x_ex = x_low + float(rows)*vol_size - x_high;
@@ -24,6 +25,8 @@ x_threshold(x_low,x_high),y_threshold(y_low,y_high),z_threshold(z_low,z_high),vo
     z_ex = z_low + float(channels)*vol_size - z_high;
 
     //TODO:transform from camera to world position
+
+
 
     pose_init = false;
     pose_get = false;
@@ -47,42 +50,60 @@ x_threshold(x_low,x_high),y_threshold(y_low,y_high),z_threshold(z_low,z_high),vo
           extrinsic[8], extrinsic[9], extrinsic[10], extrinsic[11],
           0.,0.,0.,1.;
 
+    cout<<"l_T is :\n"<<l_T<<endl;
+
     T = l_T;
 
     grids = new LidarPointCloud*[rows*cols*channels];
+    msg.header.seq = 0;
     for(int i=0;i<rows*cols*channels;++i) {
         //message init
         msg.size.push_back(0);
         msg.center_z.push_back(0.);
-        msg.header.seq = 0;
         grids[i] = new LidarPointCloud;
     }
     n.getParam("debug",DEBUG);
 
+    points_num = 0;
+
     if(DEBUG)
     {
+        for(int i = 0;i < rows;++i)
+            for(int j = 0;j <cols;++j)
+                for(int k = 0;k < channels;++k)
+                {
+                    grids_points.push_back(PointXYZ(x_low + vol_size/2 +vol_size*i,
+                                                    y_low + vol_size/2 +vol_size*j,
+                                                    z_low + vol_size/2 +vol_size*k));
+                }
         ROS_INFO("DEBUG MODE ...");
         viewer = boost::shared_ptr<pcl::visualization::PCLVisualizer>(new pcl::visualization::PCLVisualizer("cloud"));
         viewer->setBackgroundColor(0,0,0);
-        viewer->addPointCloud<PointXYZ>(sum_cloud.makeShared());
+        cloud_color.setInputCloud(grids_points.makeShared());
+        viewer->addPointCloud<PointXYZ>(sum_cloud.makeShared(),"real_points");
+        viewer->addPointCloud<PointXYZ>(grids_points.makeShared(),cloud_color,"grids");
+        _cloud_pub = _lidar_n->advertise<PointCloud2>("grids_pc",10);
+
     }
 
-    points_num = 0;
 
-    pass.setFilterFieldName("x");
-    pass.setFilterLimits(x_low,x_high);
-    pass.setFilterFieldName("y");
-    pass.setFilterLimits(y_low,y_high);
-    pass.setFilterFieldName("z");
-    pass.setFilterLimits(z_low,z_high);
-    pass.setFilterLimitsNegative(false);
+
+    pass_x.setFilterFieldName("x");
+    pass_x.setFilterLimits(x_low,x_high);
+    pass_y.setFilterFieldName("y");
+    pass_y.setFilterLimits(y_low,y_high);
+    pass_z.setFilterFieldName("z");
+    pass_z.setFilterLimits(z_low,z_high);
+    pass_x.setFilterLimitsNegative(false);
+    pass_y.setFilterLimitsNegative(false);
+    pass_z.setFilterLimitsNegative(false);
 
 
 }
 lidar_area::~lidar_area() {
     delete _pub;
     delete _sub;
-    for(int i=0;i<rows*cols;++i) delete grids[i];
+    for(int i=0;i<rows*cols*channels;++i) delete grids[i];
     delete grids;
 }
 
@@ -104,9 +125,16 @@ void lidar_area::callback(const PointCloud2::ConstPtr &data) {
 
     pcl::transformPointCloud<PointXYZ>(cloud,cloud_t,T);
 
-    pass.setInputCloud(cloud_t.makeShared());
+    pass_x.setInputCloud(cloud_t.makeShared());
 
-    pass.filter(cloud_filter);
+    pass_x.filter(cloud_filter);
+
+    pass_y.setInputCloud(cloud_filter.makeShared());
+    pass_y.filter(cloud_filter);
+
+    pass_z.setInputCloud(cloud_filter.makeShared());
+    pass_z.filter(cloud_filter);
+
 
     if(points_num > FILTER_THRE_HIGH)
     {
@@ -126,9 +154,19 @@ void lidar_area::callback(const PointCloud2::ConstPtr &data) {
     {
         sum_cloud.clear();
         for(int i = 0;i < rows*cols*channels;++i) sum_cloud += *grids[i];
-        //viewer->updatePointCloud(sum_cloud.makeShared());
-        viewer->spinOnce();
+        viewer->updatePointCloud(sum_cloud.makeShared(),"real_points");
+        viewer->spinOnce(100);
+
+        PointCloud2 cloud_msg;
+        pcl::toROSMsg(sum_cloud,cloud_msg);
+
+        cloud_msg.header.frame_id = "grids_frame";
+
+        _cloud_pub.publish(cloud_msg);
+
     }
+
+    ROS_INFO("points_num is %d",points_num);
 
 }
 int lidar_area::start(const string &lidar_topic)
@@ -166,19 +204,19 @@ void lidar_area::random_delete() {
         int size = cloud->size();
         for(int index = 0;index < size;++index)
         {
-            if(e(i,0) <= r){
-                msg_index = i*rows*channels+j*channels+k;
-                sum_z = msg.center_z[msg_index]*msg.size[msg_index]-(*cloud)[i].z;
-                msg.center_z[msg_index] = sum_z/(--msg.size[msg_index]);
+            if(e(index,0) <= r){
+                msg_index = i*cols*channels+j*channels+k;
+		
+                sum_z = msg.center_z[msg_index]*msg.size[msg_index]-(*cloud)[index].z;
+
+		        if(--msg.size[msg_index] == 0) msg.center_z[msg_index] = sum_z;
+		        else msg.center_z[msg_index] = sum_z/msg.size[msg_index];
+
                 --points_num;
                 cloud->erase(begin+index);
             }
-
         }
-
     }
-
-
 }
 
 void lidar_area::add_points(const LidarPointCloud &cloud) {
@@ -199,7 +237,7 @@ void lidar_area::add_points(const LidarPointCloud &cloud) {
         int i,j,k;
         getAreaOrder(i,j,k,point.x,point.y,point.z);
         index(i,j,k) ->push_back(point);
-        msg_index = i*rows*channels+j*channels+k;
+        msg_index = i*cols*channels+j*channels+k;
         sum_z = msg.center_z[msg_index]*msg.size[msg_index]+point.z;
         msg.center_z[msg_index] = sum_z/(++msg.size[msg_index]);
         ++points_num;
@@ -213,9 +251,12 @@ void lidar_area::pose_callback(const std_msgs::Float32MultiArrayConstPtr &data) 
             pose[4], pose[5], pose[6], pose[7],
             pose[8], pose[9], pose[10], pose[11],
             0.,0.,0.,1.;
+    c_T = c_T.inverse();
+    cout<<c_T<<endl;
     ROS_INFO("Camera pose successfully init!");
     pose_init = true;
 }
+
 int lidar_area::get_pose() {
     if(pose_get) return 0;
     if(!pose_init) return 1;
