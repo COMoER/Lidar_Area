@@ -142,7 +142,17 @@ void lidar_area::callback(const PointCloud2::ConstPtr &data) {
     }
     add_points(cloud_filter);
 
+    int counter = 0;
+    int corr = 0;
+    int z_counter = 0;
 
+    for(int i = 0; i<rows*cols*channels;++i)
+    {
+        if (msg.size[i] > 0) ++counter;
+        if (msg.size[i] == grids[i]->size()) ++corr;
+        if (msg.center_z[i] != 0) ++z_counter;
+    }
+    ROS_INFO("correct : %d/%d size>0 : %d/%d z>0 : %d/%d",corr,rows*cols*channels,counter,rows*cols*channels,z_counter,rows*cols*channels);
 
     if(points_num >= FILTER_THRE_LOW)
     {
@@ -209,7 +219,7 @@ void lidar_area::random_delete() {
 		
                 sum_z = msg.center_z[msg_index]*msg.size[msg_index]-(*cloud)[index].z;
 
-		        if(--msg.size[msg_index] == 0) msg.center_z[msg_index] = sum_z;
+		        if(--msg.size[msg_index] == 0) msg.center_z[msg_index] = 0;
 		        else msg.center_z[msg_index] = sum_z/msg.size[msg_index];
 
                 --points_num;

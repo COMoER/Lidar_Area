@@ -37,7 +37,7 @@ typedef pcl::PointCloud<pcl::PointXYZ> LidarPointCloud;
 #define FILTER_THRE_HIGH 200000
 #define FILTER_THRE_LOW 100000
 #define K 0.01
-#define RANDOM_ADD true
+#define RANDOM_ADD false
 #define K_2 0.00003
 
 class lidar_area{

@@ -176,13 +176,16 @@ class Radar:
 
         for i,p in enumerate(self.img_points.keys()):
             if p[0] >= 0  and p[0] < 3088 and p[1] >= 0 and p[1] < 2064:
-                if Radar.__grids_center_z[i] > 0:
+                if Radar.__grids_center_z[i] != 0:
                     img[int(p[1]),int(p[0])] = (255,255,255)
-                    print(p,':',Radar.__grids_size[i])
+                    # print(p,':',Radar.__grids_size[i])
                 else:
                     img[int(p[1]), int(p[0])] = (255,0,0)
 
+        print(f"[{np.sum(Radar.__grids_size > 0):d}/{len(Radar.__grids_size):d}]")
+
         Radar.__lock.release()
+
         # return img
         return img,np.sum((center_z * dsize))
 
@@ -223,7 +226,7 @@ class Radar:
 
             z = np.linspace((z_min + vol_size / 2),(z_min + vol_size / 2 + vol_size * (channels - 1)),channels,endpoint = True)
 
-            mesh_x,mesh_y,mesh_z = np.meshgrid(x,y,z)
+            mesh_x,mesh_y,mesh_z = np.meshgrid(y,x,z)
 
             self.grids = np.stack((mesh_y.reshape(-1),mesh_x.reshape(-1),mesh_z.reshape(-1)),axis = 1)
 
